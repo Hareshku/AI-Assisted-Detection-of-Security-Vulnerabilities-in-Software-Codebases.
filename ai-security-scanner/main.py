@@ -1,3 +1,4 @@
+from scanner.analyzer import analyze_file
 import sys
 import os
 from colorama import init, Fore, Style
@@ -21,7 +22,7 @@ def print_banner():
 
 
 def scan_file(filepath):
-    """Full pipeline: Parse → Extract → Score → ML Predict"""
+    """Full pipeline: Parse → Extract → Score → ML Predict → Rule Analysis"""
 
     print(Fore.YELLOW + f"\n🔍 Scanning: {filepath}" + Style.RESET_ALL)
 
@@ -40,11 +41,13 @@ def scan_file(filepath):
     # Step 4: ML prediction
     ml = predict_vulnerability(features)
 
+    # Step 5: Rule-based analysis
+    analysis = analyze_file(parse_result)
+
     # ── Display Results ──
     emoji = get_risk_emoji(risk["risk_level"])
     level = risk["risk_level"]
 
-    # Color based on risk
     if level == "HIGH":
         color = Fore.RED
     elif level == "MEDIUM":
@@ -67,8 +70,17 @@ def scan_file(filepath):
     else:
         print(Fore.GREEN + "     ✅ No threats detected" + Style.RESET_ALL)
 
-    print("─" * 50)
+    print(f"\n  🛡️  Rule Violations: {analysis['total_violations']} "
+          f"(🔴 {analysis['high']} HIGH  🟡 {analysis['medium']} MEDIUM  🟢 {analysis['low']} LOW)")
 
+    if analysis["violations"]:
+        for v in analysis["violations"]:
+            v_color = Fore.RED if v["severity"] == "HIGH" else \
+                       Fore.YELLOW if v["severity"] == "MEDIUM" else Fore.GREEN
+            print(v_color + f"     [{v['rule_id']}] {v['name']}" + Style.RESET_ALL)
+
+    print("─" * 50)
+    
 
 def scan_folder(folder_path):
     """Scans all .py, .yml, .yaml files in a folder"""

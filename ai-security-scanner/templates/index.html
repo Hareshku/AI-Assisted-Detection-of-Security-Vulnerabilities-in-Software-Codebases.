@@ -254,6 +254,36 @@
             border-radius: 8px;
             margin-bottom: 15px;
         }
+
+        .violation-item {
+            background: #0f1117;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            border-left: 3px solid #888;
+        }
+
+        .violation-item .rule-id {
+            font-size: 0.7rem;
+            color: #666;
+            font-family: monospace;
+            margin-right: 8px;
+        }
+
+        .violation-item strong {
+            color: #ddd;
+            font-size: 0.85rem;
+        }
+
+        .violation-item .rule-desc {
+            color: #888;
+            font-size: 0.78rem;
+            margin-top: 3px;
+        }
+
+        .violation-item.high   { border-left-color: #ef4444; }
+        .violation-item.medium { border-left-color: #f59e0b; }
+        .violation-item.low    { border-left-color: #22c55e; }
     </style>
 </head>
 <body>
@@ -377,6 +407,18 @@
                   ).join('')
                 : `<div class="no-threat">✅ No threats detected</div>`;
 
+            const violations = r.violations || [];
+            const violationsHtml = violations.length
+                ? violations.map(v => {
+                    const sevClass = v.severity.toLowerCase();
+                    return `<div class="violation-item ${sevClass}">
+                                <span class="rule-id">${v.rule_id}</span>
+                                <strong>${v.name}</strong>
+                                <div class="rule-desc">${v.description}</div>
+                            </div>`;
+                  }).join('')
+                : `<div class="no-threat">✅ No rule violations</div>`;
+
             html += `
                 <div class="result-card ${level}">
                     <div class="card-header">
@@ -404,6 +446,11 @@
                     <div class="reasons">
                         <h4>FINDINGS</h4>
                         ${reasonsHtml}
+                    </div>
+
+                    <div class="reasons">
+                        <h4>RULE VIOLATIONS (${r.violation_counts ? r.violation_counts.high : 0} HIGH, ${r.violation_counts ? r.violation_counts.medium : 0} MED, ${r.violation_counts ? r.violation_counts.low : 0} LOW)</h4>
+                        ${violationsHtml}
                     </div>
                 </div>
             `;

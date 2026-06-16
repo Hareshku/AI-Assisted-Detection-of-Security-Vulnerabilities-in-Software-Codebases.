@@ -1,3 +1,4 @@
+from scanner.analyzer import analyze_file
 import os
 import tempfile
 from flask import Flask, render_template, request, jsonify
@@ -31,7 +32,6 @@ def scan():
         if not file or not allowed_file(file.filename):
             continue
 
-        # Save to temp file
         ext = os.path.splitext(file.filename)[1].lower()
         with tempfile.NamedTemporaryFile(
             delete=False, suffix=ext, mode='wb'
@@ -40,35 +40,40 @@ def scan():
             tmp_path = tmp.name
 
         try:
-            # Pipeline: Parse → Extract → Score → ML Predict
             parse_result = parse_file(tmp_path)
 
             if parse_result["status"] != "success":
                 results.append({
-                    "filename":       file.filename,
-                    "error":          parse_result.get("error", "Parse error")
+                    "filename": file.filename,
+                    "error":    parse_result.get("error", "Parse error")
                 })
                 continue
 
-            features       = extract_features(parse_result)
-            risk           = calculate_risk_score(features)
-            ml_result      = predict_vulnerability(features)
+            features   = extract_features(parse_result)
+            risk       = calculate_risk_score(features)
+            ml_result  = predict_vulnerability(features)
+            analysis   = analyze_file(parse_result)
 
             results.append({
-                "filename":       file.filename,
-                "file_type":      features.get("file_type"),
-                "risk_score":     risk["score"],
-                "risk_level":     risk["risk_level"],
-                "reasons":        risk["reasons"],
-                "ml_prediction":  ml_result.get("prediction"),
-                "ml_probability": ml_result.get("probability", 0),
+                "filename":        file.filename,
+                "file_type":       features.get("file_type"),
+                "risk_score":      risk["score"],
+                "risk_level":      risk["risk_level"],
+                "reasons":         risk["reasons"],
+                "ml_prediction":   ml_result.get("prediction"),
+                "ml_probability":  ml_result.get("probability", 0),
+                "violations":      analysis.get("violations", []),
+                "violation_counts": {
+                    "high":   analysis.get("high", 0),
+                    "medium": analysis.get("medium", 0),
+                    "low":    analysis.get("low", 0),
+                },
             })
 
         finally:
             os.unlink(tmp_path)
 
     return jsonify({"results": results})
-
 
 if __name__ == '__main__':
     app.run(debug=True)
