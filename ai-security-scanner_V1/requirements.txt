@@ -1,0 +1,10 @@
+flask
+scikit-learn
+networkx
+matplotlib
+pyyaml
+astroid
+joblib
+pandas
+numpy
+colorama

